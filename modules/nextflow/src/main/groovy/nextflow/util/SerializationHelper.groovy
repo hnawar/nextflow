@@ -27,7 +27,6 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
-import com.upplication.s3fs.S3Path
 import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -230,7 +229,6 @@ class DefaultSerializers implements SerializerRegistrant {
         serializers.put( URL, URLSerializer )
         serializers.put( UUID, UUIDSerializer )
         serializers.put( File, FileSerializer )
-        serializers.put( S3Path, PathSerializer )
         serializers.put( XPath, XPathSerializer )
         serializers.put( Pattern, PatternSerializer )
         serializers.put( ArrayTuple, ArrayTupleSerializer )
