@@ -19,7 +19,7 @@
 # make deps config=runtime
 # 
 
-config ?= compile
+config ?= default
 
 ifdef module 
 mm = :${module}:

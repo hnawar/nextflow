@@ -145,11 +145,14 @@ allprojects {
 
 configurations {
     capsule
+    defaultCfg.extendsFrom runtime
+    offlineCfg.extendsFrom runtime
     //provided
-    ignite.extendsFrom runtime
-    console.extendsFrom runtime
-    ga4gh.extendsFrom runtime
-    google.extendsFrom runtime
+    ignite.extendsFrom defaultCfg
+    console.extendsFrom defaultCfg
+    ga4gh.extendsFrom defaultCfg
+    google.extendsFrom defaultCfg
+    amazon.extendsFrom defaultCfg
 }
 
 
@@ -157,13 +160,17 @@ dependencies {
     compile project(':nextflow')
     // include Ivy at runtime in order to have Grape @Grab work correctly
     runtime "org.apache.ivy:ivy:2.3.0"
-    runtime project(':nf-tower')
     // Capsule manages the fat jar building process
     capsule project(':my-capsule')
-    ignite  project(':nf-ignite')
     console project(':nf-console')
     ga4gh   project(':nf-ga4gh')
     google  project(':nf-google')
+    amazon  project(':nf-amazon')
+    ignite 'io.nextflow:nf-ignite:1.0.0-SNAPSHOT'
+    // default cfg = runtime + httpfs + amazon + tower client
+    defaultCfg project(':nf-httpfs')
+    defaultCfg project(':nf-tower')
+    defaultCfg project(':nf-amazon')
 }
 
 // disable jar for root project
@@ -258,11 +265,11 @@ ext.enableSignArchives = project.findProperty('signing.keyId')
 ext.deployable = []
 ext.deployable << project(':nextflow')
 ext.deployable << project(':nf-commons')
-ext.deployable << project(':nf-ignite')
 ext.deployable << project(':nf-console')
 ext.deployable << project(':nf-httpfs')
 ext.deployable << project(':nf-ga4gh')
 ext.deployable << project(':nf-google')
+ext.deployable << project(':nf-amazon')
 ext.deployable << project(':nf-tower')
 
 protected error(String message) {
@@ -331,7 +338,7 @@ task packOne(type: Jar) {
     from (configurations.capsule.collect { zipTree(it) })
 
     // main manifest attributes
-    def deps = resolveDeps('runtime')
+    def deps = resolveDeps('defaultCfg')
 
     manifest.attributes(
                 'Main-Class'        : 'CapsuleLoader',
@@ -372,6 +379,12 @@ task packOne(type: Jar) {
     manifest.attributes('Dependencies': deps, 'ga4gh')
 
     /*
+     * `amazon` dependencies
+     */
+    deps = resolveDeps('amazon')
+    manifest.attributes('Dependencies': deps, 'amazon')
+
+    /*
      * `google` dependencies
      */
     deps = resolveDeps('google')
@@ -389,9 +402,10 @@ task packAll(type: Jar) {
     archiveName = "nextflow-${version}-all.jar"
 
     from jar // embed our application jar
-    from (configurations.ignite)
+    from (configurations.ignite + configurations.amazon + configurations.google)
     from (configurations.capsule.collect { zipTree(it) })
-
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
     manifest.attributes( 'Main-Class'        : 'CapsuleLoader',
                           'Application-Name'  : 'nextflow-all',
                           'Application-Class' : mainClassName,
@@ -399,7 +413,36 @@ task packAll(type: Jar) {
                           'Min-Java-Version'  : '1.8.0'
                           )
 
-    manifest.attributes('Main-Class': 'CapsuleLoader', 'ignite')
+    /*
+     * `console` dependencies
+     */
+    def deps = resolveDeps('console')
+    manifest.attributes('Application-Class' : 'nextflow.ui.console.Nextflow', 'console' )
+    manifest.attributes('Dependencies': deps, 'console')
+
+    /*
+     * `ignite` dependencies
+     */
+    deps = resolveDeps('ignite')
+    manifest.attributes('Dependencies': deps, 'ignite')
+
+    /*
+     * `ga4gh` dependencies
+     */
+    deps = resolveDeps('ga4gh')
+    manifest.attributes('Dependencies': deps, 'ga4gh')
+
+    /*
+     * `amazon` dependencies
+     */
+    deps = resolveDeps('amazon')
+    manifest.attributes('Dependencies': deps, 'amazon')
+
+    /*
+     * `google` dependencies
+     */
+    deps = resolveDeps('google')
+    manifest.attributes('Dependencies': deps, 'google')
 
     doLast {
         file(releaseDir).mkdir()
@@ -584,10 +627,13 @@ task release(type: Exec, dependsOn: [pack, dockerImage]) {
  * Save the runtime classpath
  */
 task exportClasspath {
-    dependsOn configurations.ignite, configurations.console, configurations.ga4gh, configurations.google
+    dependsOn configurations.console, configurations.ga4gh, configurations.google, configurations.amazon
 
     def home = System.getProperty('user.home')
-    def all = configurations.ignite + configurations.console + configurations.ga4gh + configurations.google
+    def all = configurations.console \
+            + configurations.ga4gh \
+            + configurations.google \
+            + configurations.amazon
     def libs = all.collect { File file -> /* println file.canonicalPath.replace(home, '$HOME'); */ file.canonicalPath;  }
     file('.launch.classpath').text = libs.join(':')
 }
@@ -615,7 +661,7 @@ configure(deployable) {
 
     task javadocJar(type: Jar) {
         classifier = 'javadoc'
-        from groovydoc
+        from configurations.groovyDoc
     }
 
     task sourcesJar(type: Jar) {
