@@ -54,7 +54,7 @@ allprojects {
     apply plugin: 'java-test-fixtures'
     apply plugin: 'idea'
 
-    version = /20.05.2-SNAPSHOT/
+    version = new File('VERSION').text.trim()
     group = 'io.nextflow'
 
     sourceCompatibility = 1.8
@@ -153,24 +153,27 @@ configurations {
     ga4gh.extendsFrom defaultCfg
     google.extendsFrom defaultCfg
     amazon.extendsFrom defaultCfg
+    legacy.extendsFrom defaultCfg
 }
-
 
 dependencies {
     compile project(':nextflow')
     // include Ivy at runtime in order to have Grape @Grab work correctly
     runtime "org.apache.ivy:ivy:2.3.0"
+    // default cfg = runtime + httpfs + amazon + tower client
+    defaultCfg project(':nf-httpfs')
+    defaultCfg project(':nf-tower')
+    defaultCfg project(':nf-amazon')
     // Capsule manages the fat jar building process
     capsule project(':my-capsule')
     console project(':nf-console')
     ga4gh   project(':nf-ga4gh')
     google  project(':nf-google')
     amazon  project(':nf-amazon')
+    // ignite module
     ignite 'io.nextflow:nf-ignite:1.0.0-SNAPSHOT'
-    // default cfg = runtime + httpfs + amazon + tower client
-    defaultCfg project(':nf-httpfs')
-    defaultCfg project(':nf-tower')
-    defaultCfg project(':nf-amazon')
+    // legacy cloud support
+    legacy 'io.nextflow:nf-legacy-cloud:1.0.0-SNAPSHOT'
 }
 
 // disable jar for root project
@@ -389,6 +392,12 @@ task packOne(type: Jar) {
      */
     deps = resolveDeps('google')
     manifest.attributes('Dependencies': deps, 'google')
+
+    /*
+     * `legacy` dependencies
+     */
+    deps = resolveDeps('legacy')
+    manifest.attributes('Dependencies': deps, 'legacy')
 
     doLast {
         ant.copy(file: "$buildDir/libs/nextflow-${version}-one.jar", todir: releaseDir, overwrite: true)
