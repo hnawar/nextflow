@@ -66,6 +66,9 @@ endif
 smoke:
 	NXF_SMOKE=1 ./gradlew test
 
+upload:
+	./gradlew upload
+
 pack:
 	./gradlew packAll
 
