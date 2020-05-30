@@ -44,8 +44,11 @@ assemble:
 check:
 	./gradlew check
 
+#
+# install compiled artifacts in Mavel local dir 
+# 
 install:
-	./gradlew installLauncher install -Dmaven.repo.local=${HOME}/.nextflow/capsule/deps/ -x signArchives
+	BUILD_PACK=1 ./gradlew installLauncher install -Dmaven.repo.local=${HOME}/.nextflow/capsule/deps/ -x signArchives
 
 #
 # Show dependencies try `make deps config=runtime`, `make deps config=google`
