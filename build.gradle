@@ -332,3 +332,6 @@ nexusStaging {
     packageGroup = 'io.nextflow'
     delayBetweenRetriesInMillis = 10_000
 }
+
+if( System.env.BUILD_PACK )
+    apply from: 'packing.gradle'
