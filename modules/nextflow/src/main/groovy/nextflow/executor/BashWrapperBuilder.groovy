@@ -138,7 +138,7 @@ class BashWrapperBuilder {
     }
 
     protected boolean shouldUnstageOutputs() {
-        return workDir != targetDir
+        return targetDir && workDir!=targetDir
     }
 
     protected boolean fixOwnership() {
@@ -262,7 +262,7 @@ class BashWrapperBuilder {
         binding.launch_cmd = getLaunchCommand(interpreter,env)
         binding.stage_cmd = getStageCommand()
         binding.unstage_cmd = getUnstageCommand()
-        binding.unstage_controls = changeDir ? getUnstageControls() : null
+        binding.unstage_controls = changeDir || shouldUnstageOutputs() ? getUnstageControls() : null
 
         if( changeDir || shouldUnstageOutputs() ) {
             binding.unstage_outputs = copyStrategy.getUnstageOutputFilesScript(outputFiles,targetDir)
@@ -483,6 +483,9 @@ class BashWrapperBuilder {
 
         if( this.containerMemory )
             builder.setMemory(containerMemory)
+
+        if( this.containerCpus )
+            builder.setCpus(containerCpus)
 
         if( this.containerCpuset )
             builder.addRunOptions(containerCpuset)

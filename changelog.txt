@@ -1,7 +1,46 @@
 NEXTFLOW CHANGE-LOG
 ===================
-20.11.0-edge - 16 Nov 2020
+21.02.0-edge - 1 Feb 2021
+- Fix Issue when merging nested cli params  #1856 [275e54c4] [fe37da6d]
+- Fix job status detection on PBS pro #1840 [c1598908]
+- Fix Issue when merging nested cli params #1856 (19 hours ago) <Paolo Di Tommaso>
+- Revert the CPU/memory options being passed to singularity VM instead of singularity container [0d04e0f9]
+- Add ability to specify plugins with cli [de91218f]
+- Decrease upload/download process polling to 0.2secs [6ca2d6ca]
+- Remove nf-amazon as default [e6810e90]
+- Make plugin services singleton [cacd9328] [5787be6d]
+- Make repository provider accessible to subclasses [988bccc6]
+- Fix error on plugin downloading #1859 [77cabb3c]
 
+21.01.1-edge - 15 Jan 2021
+- Plugins stability improvements [8d849ec9] [bf093826]
+- Charliecloud improvements [2242411a]
+- Fix issue of FS discovery with dyn plugin loading [bf5e86df]
+- Fix crash on startup when mem reported < 0 [095236b8]
+- Fix and stability [e4b8afb5]
+- Fix launcher on Java11 [c6b78034]
+- Add plugins custom version manager (4 days ago) <Paolo Di Tommaso>
+- Improve NF version checking [d33ea642]
+- Bump plugins minor upgrade [f91bc21e]
+
+21.01.0-edge - 04 Jan 2021
+- Merge plugins feature [d959bfdb]
+- Prevent twice access remote scm file [b2798556]
+- Fix DAG edges not connected correctly #1486 [cece1161]
+- Fix k8s executor must provide cpu resource requests #1570 [6896e923]
+- Fix http/ftp read buffer size [a2886baf]
+- Add support for OAuth Bearer auth [5823c280]
+- Add support for basic auth for http/s file provider [6027fcba]
+- Add User-Agent info to httpfs requests [222637de]
+- Update CPU and RAM for containers (#1833) [ccf5c8ba]
+- Move test containes to quay.io [7db053eb] [773be707] [c10a7f53]
+
+20.12.0-edge - 12 Dec 2020 
+- Add support for charliecloud container engine #1809
+- Fix glitch on K8s task progress update [668434f6]
+- Upgrade to groovy 3.0.7 [27056035]
+
+20.11.0-edge - 16 Nov 2020
 - Fix Allow nextflow to handle http protocol for Singularity images #1791
 - Fix params-file overrides config parameters [b03efcac]
 - Fix println failing test #1621 [8c6f0f97] [9d2e5850]

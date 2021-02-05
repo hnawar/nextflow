@@ -35,6 +35,7 @@ import nextflow.NextflowMeta
 import nextflow.config.ConfigBuilder
 import nextflow.exception.AbortOperationException
 import nextflow.file.FileHelper
+import nextflow.plugin.Plugins
 import nextflow.scm.AssetManager
 import nextflow.script.ScriptFile
 import nextflow.script.ScriptRunner
@@ -227,6 +228,9 @@ class CmdRun extends CmdBase implements HubOptions {
     @Parameter(names=['-stub-run','-stub'], description = 'Execute the workflow replacing process scripts with command stubs')
     boolean stubRun
 
+    @Parameter(names=['-plugins'], description = 'Specify the plugins to be applied for this run e.g. nf-amazon,nf-tower')
+    String plugins
+
     @Override
     String getName() { NAME }
 
@@ -257,10 +261,15 @@ class CmdRun extends CmdBase implements HubOptions {
         final scriptFile = getScriptFile(pipeline)
 
         // create the config object
-        final config = new ConfigBuilder()
-                        .setOptions(launcher.options)
-                        .setCmdRun(this)
-                        .setBaseDir(scriptFile.parent)
+        final builder = new ConfigBuilder()
+                .setOptions(launcher.options)
+                .setCmdRun(this)
+                .setBaseDir(scriptFile.parent)
+        final config = builder .build()
+
+        // -- load plugins
+        final cfg = plugins ? [plugins: plugins.tokenize(',')] : config
+        Plugins.setup( cfg )
 
         // -- create a new runner instance
         final runner = new ScriptRunner(config)
@@ -269,6 +278,9 @@ class CmdRun extends CmdBase implements HubOptions {
         runner.session.commandLine = launcher.cliString
         runner.session.ansiLog = launcher.options.ansiLog
         runner.session.resolvedConfig = resolveConfig(scriptFile.parent)
+        // note config files are collected during the build process
+        // this line should be after `ConfigBuilder#build`
+        runner.session.configFiles = builder.parsedConfigFiles
 
         if( this.test ) {
             runner.test(this.test, scriptArgs)
@@ -423,7 +435,7 @@ class CmdRun extends CmdBase implements HubOptions {
         if( m.find() ) {
             final p = m.start()
             final root = key.substring(0, p)
-            if( !root ) throw new AbortOperationException("Invalida parameter name: $fullKey")
+            if( !root ) throw new AbortOperationException("Invalid parameter name: $fullKey")
             path.add(root)
             def nested = params.get(root)
             if( nested == null ) {

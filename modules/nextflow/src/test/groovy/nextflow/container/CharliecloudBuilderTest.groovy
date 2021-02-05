@@ -20,6 +20,7 @@ package nextflow.container
 import java.nio.file.Paths
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /**
  *
@@ -37,36 +38,41 @@ class CharliecloudBuilderTest extends Specification {
         expect:
         new CharliecloudBuilder('busybox')
                 .build()
-                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -b "$PWD":"$PWD" -c "$PWD" busybox --'
+                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -b "$PWD":"$PWD" -c "$PWD" busybox --'
 
         new CharliecloudBuilder('busybox')
-                .params(runOptions: '-j -w')
+                .params(runOptions: '-j')
                 .build()
-                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -j -w -b "$PWD":"$PWD" -c "$PWD" busybox --'
+                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -j -b "$PWD":"$PWD" -c "$PWD" busybox --'
+        
+        new CharliecloudBuilder('busybox')
+                .params(temp: '/foo')
+                .build()
+                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -b /foo:/tmp -b "$PWD":"$PWD" -c "$PWD" busybox --'
 
         new CharliecloudBuilder('busybox')
                 .addEnv('X=1')
                 .addEnv(ALPHA:'aaa', BETA: 'bbb')
                 .build()
-                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" --set-env=<( echo "X=1" ) --set-env=<( echo "ALPHA="aaa"" ) --set-env=<( echo "BETA="bbb"" ) -b "$PWD":"$PWD" -c "$PWD" busybox --'
+                .runCommand == 'ch-run --no-home -w busybox -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w --set-env=<( echo "X=1" ) --set-env=<( echo "ALPHA="aaa"" ) --set-env=<( echo "BETA="bbb"" ) -b "$PWD":"$PWD" -c "$PWD" busybox --'
 
         new CharliecloudBuilder('ubuntu')
                 .addMount(path1)
                 .build()
-                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 "$PWD"";ch-run --no-home --unset-env="*" -b /foo/data/file1:/foo/data/file1 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
+                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 "$PWD"";ch-run --no-home --unset-env="*" -w -b /foo/data/file1:/foo/data/file1 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
 
         new CharliecloudBuilder('ubuntu')
                 .addMount(path1)
                 .addMount(path2)
                 .build()
-                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 /bar/data/file2 "$PWD"";ch-run --no-home --unset-env="*" -b /foo/data/file1:/foo/data/file1 -b /bar/data/file2:/bar/data/file2 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
+                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 /bar/data/file2 "$PWD"";ch-run --no-home --unset-env="*" -w -b /foo/data/file1:/foo/data/file1 -b /bar/data/file2:/bar/data/file2 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
 
         new CharliecloudBuilder('ubuntu')
                 .addMount(path1)
                 .addMount(path2)
                 .params(readOnlyInputs: true)
                 .build()
-                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 /bar/data/file2 "$PWD"";ch-run --no-home --unset-env="*" -b /foo/data/file1:/foo/data/file1 -b /bar/data/file2:/bar/data/file2 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
+                .runCommand == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p /foo/data/file1 /bar/data/file2 "$PWD"";ch-run --no-home --unset-env="*" -w -b /foo/data/file1:/foo/data/file1 -b /bar/data/file2:/bar/data/file2 -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
     }
 
     def 'should get run command' () {
@@ -74,32 +80,33 @@ class CharliecloudBuilderTest extends Specification {
         when:
         def cmd = new CharliecloudBuilder('ubuntu').build().getRunCommand()
         then:
-        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
+        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -b "$PWD":"$PWD" -c "$PWD" ubuntu --'
 
         when:
         cmd = new CharliecloudBuilder('ubuntu').build().getRunCommand('bwa --this --that file.fastq')
         then:
-        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -b "$PWD":"$PWD" -c "$PWD" ubuntu -- bwa --this --that file.fastq'
+        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -b "$PWD":"$PWD" -c "$PWD" ubuntu -- bwa --this --that file.fastq'
 
         when:
         cmd = new CharliecloudBuilder('ubuntu').params(entry:'/bin/sh').build().getRunCommand('bwa --this --that file.fastq')
         then:
-        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -b "$PWD":"$PWD" -c "$PWD" ubuntu -- /bin/sh -c "bwa --this --that file.fastq"'
+        cmd == 'ch-run --no-home -w ubuntu -- bash -c "mkdir -p "$PWD"";ch-run --no-home --unset-env="*" -w -b "$PWD":"$PWD" -c "$PWD" ubuntu -- /bin/sh -c "bwa --this --that file.fastq"'
     }
 
+    @Unroll
     def 'test charliecloud env'() {
 
         given:
-        def builder = [:] as CharliecloudBuilder
+        def builder = Spy(CharliecloudBuilder)
 
         expect:
         builder.makeEnv(ENV).toString() == RESULT
 
         where:
-        ENV                         | RESULT
-        'X=1'                       | '--set-env=<( echo "X=1" )'
-        'BAR'                       | '${BAR:+--set-env=<( echo "BAR="$BAR"" )}'
-        [VAR_X:1, VAR_Y:2]         | '--set-env=<( echo "VAR_X="1"" ) --set-env=<( echo "VAR_Y="2"" )'
-        [FOO: 'x', BAR: 'y'] | '--set-env=<( echo "FOO="x"" ) --set-env=<( echo "BAR="y"" )'
+        ENV                     | RESULT
+        'X=1'                   | '--set-env=<( echo "X=1" )'
+        'BAR'                   | '${BAR:+--set-env=<( echo "BAR="$BAR"" )}'
+        [VAR_X:1, VAR_Y:2]      | '--set-env=<( echo "VAR_X="1"" ) --set-env=<( echo "VAR_Y="2"" )'
+        [FOO: 'x', BAR: 'y']    | '--set-env=<( echo "FOO="x"" ) --set-env=<( echo "BAR="y"" )'
     }
 }
